@@ -117,7 +117,7 @@ namespace Coravel.Scheduling.Schedule
             return true; // Nothing to remove - was successful.
         }
 
-        private async Task InvokeEvent(ScheduledEvent scheduledEvent)
+        private async Task InvokeEvent(IScheduledEvent scheduledEvent)
         {
             try
             {
@@ -179,13 +179,13 @@ namespace Coravel.Scheduling.Schedule
             foreach (var keyValue in this._tasks)
             {
                 bool timerIsNotAtMinute = utcDate.Second != 0;
-                bool taskIsPerMinuteCronTask = keyValue.Value.ScheduledEvent.IsScheduledCronBasedTask();
+                bool taskIsPerMinuteTask = !keyValue.Value.ScheduledEvent.NeedsToBeCheckedEverySecond();
                 bool appendTask = true;
 
                 // If this task is scheduled as a cron based task (should only be checked if due per min)
                 // but the time is not at the minute mark, we won't include those tasks to be checked if due.
                 // The second based schedules are always checked.
-                if(taskIsPerMinuteCronTask && timerIsNotAtMinute)
+                if(taskIsPerMinuteTask && timerIsNotAtMinute)
                 {
                     appendTask = false;
                 }
@@ -237,7 +237,7 @@ namespace Coravel.Scheduling.Schedule
                 this.ScheduledEvent = scheduledEvent;
             }
 
-            public ScheduledEvent ScheduledEvent { get; set; }
+            public IScheduledEvent ScheduledEvent { get; set; }
             public string WorkerName { get; set; }
         }
     }

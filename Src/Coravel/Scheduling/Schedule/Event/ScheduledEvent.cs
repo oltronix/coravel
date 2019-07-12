@@ -8,7 +8,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Coravel.Scheduling.Schedule.Event
 {
-    public class ScheduledEvent : IScheduleInterval, IScheduledEventConfiguration
+    public interface IScheduledEvent
+    {
+        bool IsDue(DateTime utcNow);
+        Task InvokeScheduledEvent();
+        bool ShouldPreventOverlapping();
+        string OverlappingUniqueIdentifier();
+        bool NeedsToBeCheckedEverySecond();
+    }
+
+    public class ScheduledEvent : IScheduledEvent, IScheduleInterval, IScheduledEventConfiguration
     {
         private CronExpression _expression;
         private ActionOrAsyncFunc _scheduledAction;
@@ -101,6 +110,7 @@ namespace Coravel.Scheduling.Schedule.Event
 
         public string OverlappingUniqueIdentifier() => this._eventUniqueID;
 
+        public bool NeedsToBeCheckedEverySecond() => this._isScheduledPerSecond;
         public bool IsScheduledCronBasedTask() => !this._isScheduledPerSecond;
 
         public IScheduledEventConfiguration Daily()

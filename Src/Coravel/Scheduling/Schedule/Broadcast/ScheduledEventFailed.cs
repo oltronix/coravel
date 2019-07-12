@@ -6,11 +6,11 @@ namespace Coravel.Scheduling.Schedule.Broadcast
 {
     public class ScheduledEventFailed : IEvent
     {
-        public ScheduledEvent FailedEvent { get; private set; }
+        public IScheduledEvent FailedEvent { get; private set; }
         public DateTime FailedAtUtc { get; private set; }
         public Exception Exception { get; private set; }
 
-        public ScheduledEventFailed(ScheduledEvent failedEvent, Exception ex)
+        public ScheduledEventFailed(IScheduledEvent failedEvent, Exception ex)
         {
             this.FailedEvent = failedEvent;
             this.FailedAtUtc = DateTime.UtcNow;
