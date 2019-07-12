@@ -59,6 +59,15 @@ namespace Coravel.Scheduling.Schedule
             return scheduled;
         }
 
+        public void ScheduleConfigurable<TInvocable>(Func<IScheduleBuilder, IScheduleBuilder> configuration)
+            where TInvocable : IInvocable
+        {
+            var builder = new ConfigurableScheduleBuilder<TInvocable>();
+            configuration(builder);
+            var scheduled = builder.Build(_scopeFactory);
+            this._tasks.TryAdd(Guid.NewGuid().ToString(), new ScheduledTask(this._currentWorkerName, scheduled));
+        }
+
         public IScheduleInterval ScheduleInvocableType(Type invocableType)
         {
             if (!typeof(IInvocable).IsAssignableFrom(invocableType))
@@ -231,7 +240,7 @@ namespace Coravel.Scheduling.Schedule
 
         private class ScheduledTask
         {
-            public ScheduledTask(string workerName, ScheduledEvent scheduledEvent)
+            public ScheduledTask(string workerName, IScheduledEvent scheduledEvent)
             {
                 this.WorkerName = workerName;
                 this.ScheduledEvent = scheduledEvent;

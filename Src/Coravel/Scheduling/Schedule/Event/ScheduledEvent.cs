@@ -8,14 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Coravel.Scheduling.Schedule.Event
 {
-    public interface IScheduledEvent
-    {
-        bool IsDue(DateTime utcNow);
-        Task InvokeScheduledEvent();
-        bool ShouldPreventOverlapping();
-        string OverlappingUniqueIdentifier();
-        bool NeedsToBeCheckedEverySecond();
-    }
 
     public class ScheduledEvent : IScheduledEvent, IScheduleInterval, IScheduledEventConfiguration
     {

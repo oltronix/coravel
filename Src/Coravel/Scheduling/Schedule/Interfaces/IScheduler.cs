@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Coravel.Invocable;
+using Coravel.Scheduling.Schedule.Event;
 
 namespace Coravel.Scheduling.Schedule.Interfaces
 {
@@ -37,5 +38,8 @@ namespace Coravel.Scheduling.Schedule.Interfaces
         /// <param name="workerName"></param>
         /// <returns></returns>
         IScheduler OnWorker(string workerName);
+
+        void ScheduleConfigurable<TInvocable>(Func<IScheduleBuilder, IScheduleBuilder> configuration)
+            where TInvocable : IInvocable;
     }
 }
