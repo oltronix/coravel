@@ -14,6 +14,7 @@ using Coravel.Invocable;
 using Coravel.Events.Interfaces;
 using Coravel.Scheduling.Schedule.Broadcast;
 using System.Threading;
+using Coravel.Scheduling.Schedule.Event.Configurable;
 
 namespace Coravel.Scheduling.Schedule
 {

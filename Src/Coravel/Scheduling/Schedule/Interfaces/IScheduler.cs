@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Coravel.Invocable;
-using Coravel.Scheduling.Schedule.Event;
+using Coravel.Scheduling.Schedule.Event.Configurable;
 
 namespace Coravel.Scheduling.Schedule.Interfaces
 {
