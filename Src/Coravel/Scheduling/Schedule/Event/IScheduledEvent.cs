@@ -21,18 +21,6 @@ namespace Coravel.Scheduling.Schedule.Event
         bool NeedsToBeCheckedEverySecond();
     }
 
-    public class AsyncFuncInvocable : IInvocable
-    {
-        public AsyncFuncInvocable(Func<Task> func)
-        {
-            Func = func;
-        }
-
-        public Func<Task> Func { get; }
-
-        public Task Invoke() => Func();
-    }
-
     public class ConfigurableScheduledEvent<TInvocable> : IScheduledEvent
         where TInvocable : IInvocable
     {
@@ -40,11 +28,13 @@ namespace Coravel.Scheduling.Schedule.Event
         private readonly string _preventOverlappingKey;
         public IScheduleTiming Entry { get; }
         private Func<Task<bool>> When { get; } = () => Task.FromResult(true);
+        public Func<IInvocable, Task> WrapperAction { get; }
 
-        internal ConfigurableScheduledEvent(IScheduleTiming entry, IServiceScopeFactory scopeFactory, string overlappKey = null, Func<Task<bool>> predicate = null)
+        internal ConfigurableScheduledEvent(IScheduleTiming entry, IServiceScopeFactory scopeFactory, string overlappKey = null, Func<Task<bool>> predicate = null, Func<IInvocable, Task> wrapperAction = null)
         {
             Entry = entry ?? throw new ArgumentNullException($"{nameof(entry)} was null");
             When = predicate ?? When;
+            WrapperAction = wrapperAction;
             _preventOverlappingKey = overlappKey;
             this._scopeFactory = scopeFactory ?? throw new ArgumentNullException($"{nameof(scopeFactory)} was null");
         }
@@ -59,7 +49,10 @@ namespace Coravel.Scheduling.Schedule.Event
                 {
                     if (scope.ServiceProvider.GetRequiredService<TInvocable>() is IInvocable invocable)
                     {
-                        await invocable.Invoke();
+                        if (WrapperAction != null)
+                            await WrapperAction(invocable);
+                        else
+                            await invocable.Invoke();
                     }
                 }
             }
@@ -77,8 +70,11 @@ namespace Coravel.Scheduling.Schedule.Event
     public interface IScheduleBuilder
     {
         IScheduleBuilder UseCustomTiming(IScheduleTiming timing);
+        IScheduleBuilder UseDefaultTiming(Action<IScheduleInterval> configuration);
+        IScheduleBuilder ExecuteOnlyWhen(Func<Task<bool>> predicate);
         IScheduleBuilder PreventOverlapping(string key);
         IScheduledEvent Build(IServiceScopeFactory scopeFactory);
+        IScheduleBuilder WrapUsing(Func<IInvocable, Task> action);
     }
 
     public class ConfigurableScheduleBuilder<TInvocable> : IScheduleBuilder
@@ -88,6 +84,7 @@ namespace Coravel.Scheduling.Schedule.Event
         private Action<IScheduleInterval> _defaultScheduleAction;
         private string _overlappingKey;
         private Func<Task<bool>> _predicate;
+        private Func<IInvocable, Task> _wrapperAction;
 
         public IScheduleBuilder UseCustomTiming(IScheduleTiming timing)
         {
@@ -113,15 +110,25 @@ namespace Coravel.Scheduling.Schedule.Event
             return this;
         }
 
+        public IScheduleBuilder WrapUsing(Func<IInvocable, Task> action)
+        {
+            _wrapperAction = action;
+            return this;
+        }
+
         public IScheduledEvent Build(IServiceScopeFactory scopeFactory)
         {
             if (_scheduleTiming == null)
             {
                 var standardEvent = ScheduledEvent.WithInvocable<TInvocable>(scopeFactory);
+                if (_overlappingKey != null)
+                    standardEvent.PreventOverlapping(_overlappingKey);
+                if (_predicate != null)
+                    standardEvent.When(_predicate);
                 _defaultScheduleAction?.Invoke(standardEvent);
                 return standardEvent;
             }
-            return new ConfigurableScheduledEvent<TInvocable>(_scheduleTiming, scopeFactory, _overlappingKey, _predicate);
+            return new ConfigurableScheduledEvent<TInvocable>(_scheduleTiming, scopeFactory, _overlappingKey, _predicate, _wrapperAction);
         }
     }
 }
